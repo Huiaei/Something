@@ -15,6 +15,6 @@ jobs:
     steps: 
     - name: git
       run: |
-        git clone https://github.com/larryli/PuTTY.git /PuTTY
-        cd /PuTTY/windows
+        git clone https://github.com/larryli/PuTTY.git ~/PuTTY
+        cd ~/PuTTY/windows
         ls -a 
