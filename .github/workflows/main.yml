@@ -20,8 +20,8 @@ jobs:
         ls -a 
     - name: 初始化Python环境
       run: |
-        apt update
-        apt install python
+        sudo apt update
+        sudo apt -y install python
         pip install argparse os tempfile shutil subprocess pipes
     - name: 构建
       run: |
