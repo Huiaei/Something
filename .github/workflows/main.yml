@@ -22,8 +22,8 @@ jobs:
       run: |
         sudo apt update
         sudo apt -y install python
-        pip --version
+        sudo pip --version
     - name: 构建
       run: |
-        python ~/PuTTY/windows/msiplatform.py
+        sudo python ~/PuTTY/windows/msiplatform.py
         ls -a
