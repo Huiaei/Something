@@ -22,8 +22,8 @@ jobs:
       run: |
         sudo apt update
         sudo apt -y install python
-        pip -v
-        pip install argparse os tempfile shutil subprocess pipes
+        pip --version
+        pip install argparse tempfile shutil subprocess pipes
     - name: 构建
       run: |
         python ./msiplatform.py
