@@ -25,5 +25,5 @@ jobs:
         pip --version
     - name: 构建
       run: |
-        python ./msiplatform.py
+        python msiplatform.py
         ls -a
