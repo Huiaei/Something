@@ -15,7 +15,7 @@ jobs:
     steps: 
     - name: Git 项目
       run: |
-        git clone https://github.com/larryli/PuTTY.git ~/PuTTY
+        git clone -b master https://github.com/larryli/PuTTY.git ~/PuTTY
         cd ~/PuTTY/windows
         ls -a 
     - name: 初始化Python环境
