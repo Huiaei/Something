@@ -25,5 +25,5 @@ jobs:
         sudo pip --version
     - name: 构建
       run: |
-        sudo python ~/PuTTY/windows/msiplatform.py -v -k msi
+        sudo python ~/PuTTY/windows/msiplatform.py -v -k msi platform
         ls -a
