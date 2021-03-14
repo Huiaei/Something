@@ -16,7 +16,7 @@ jobs:
     - name: 下载项目文件
       run: |
         git clone -b master https://github.com/larryli/PuTTY.git ~/PuTTY
-        wget --output-document=~/PuTTY/windows/msiplatform.py https://raw.githubusercontent.com/Huiaei/test/main/msiplatform.py
+        wget -O /home/runner/PuTTY/windows/msiplatform.py https://raw.githubusercontent.com/Huiaei/test/main/msiplatform.py
         cd ~/PuTTY/windows
         ls -a 
     - name: 初始化Python环境
