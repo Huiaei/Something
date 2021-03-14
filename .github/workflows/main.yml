@@ -25,5 +25,5 @@ jobs:
         pip --version
     - name: 构建
       run: |
-        python msiplatform.py
+        python ~/PuTTY/windows/msiplatform.py
         ls -a
