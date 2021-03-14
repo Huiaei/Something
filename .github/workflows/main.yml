@@ -9,7 +9,7 @@ on:
 #流程
 jobs: 
   build: 
-    name: 初始化系统
+    name: 构建 PuTTY-CN
     runs-on: ubuntu-latest
 
     steps: 
@@ -18,7 +18,12 @@ jobs:
         git clone https://github.com/larryli/PuTTY.git ~/PuTTY
         cd ~/PuTTY/windows
         ls -a 
+    - name: 初始化Python环境
+      run: |
+        apt update
+        apt install python
+        pip install argparse os tempfile shutil subprocess pipes
     - name: 构建
       run: |
-        make -f Makefile.mgw CC=winegcc RC=wrc
+        python ./msiplatform.py
         ls -a
