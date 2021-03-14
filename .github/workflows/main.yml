@@ -29,3 +29,9 @@ jobs:
       run: |
         sudo python ~/PuTTY/windows/msiplatform.py -v -k msi platform
         ls -a
+    - name: 上传文件
+      uses: actions/upload-artifact@master
+      if: always()
+      with:
+        name: Packages
+        path: /home/runner/work/test
