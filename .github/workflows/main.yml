@@ -13,9 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps: 
-    - name: Git 项目
+    - name: 下载项目文件
       run: |
         git clone -b master https://github.com/larryli/PuTTY.git ~/PuTTY
+        wget --output-document=~/PuTTY/windows/msiplatform.py https://raw.githubusercontent.com/Huiaei/test/main/msiplatform.py
         cd ~/PuTTY/windows
         ls -a 
     - name: 初始化Python环境
@@ -23,6 +24,7 @@ jobs:
         sudo apt update
         sudo apt -y install python
         sudo pip --version
+        sudo pip list
     - name: 构建
       run: |
         sudo python ~/PuTTY/windows/msiplatform.py -v -k msi platform
