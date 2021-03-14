@@ -1,5 +1,5 @@
 #名子
-name: build putty
+name: 构建 PuTTY-CN
 
 #触发条件
 on: 
@@ -13,8 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps: 
-    - name: git
+    - name: Git 项目
       run: |
         git clone https://github.com/larryli/PuTTY.git ~/PuTTY
         cd ~/PuTTY/windows
         ls -a 
+    - name: 构建
+      run: |
+        make -f Makefile.mgw CC=winegcc RC=wrc
+        ls -a
