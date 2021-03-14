@@ -2,17 +2,17 @@
 name: build putty
 
 #触发条件
-on:
-  watch:
-    types:[started]
+on: 
+  watch: 
+    types: [started]
 
 #流程
-jobs:
-  build:
+jobs: 
+  build: 
     name: 初始化系统
     runs-on: ubuntu-latest
 
-    steps:
+    steps: 
     - name: git
       run: |
         git clone https://github.com/larryli/PuTTY.git /PuTTY
