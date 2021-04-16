@@ -1,5 +1,5 @@
 #名子
-name: 构建 PuTTY-CN
+name: neofetch
 
 #触发条件
 on: 
@@ -9,7 +9,7 @@ on:
 #流程
 jobs: 
   build: 
-    name: 构建 PuTTY-CN
+    name: neofetch
     runs-on: ubuntu-latest
 
     steps: 
