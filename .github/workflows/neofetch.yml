@@ -15,6 +15,6 @@ jobs:
     steps: 
     - name: 下载项目文件
       run: |
-        apt update
-        apt install neofetch
-        nofetch
+        sudo apt update
+        sudo apt install neofetch
+        sudo neofetch
