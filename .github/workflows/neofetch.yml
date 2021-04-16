@@ -9,12 +9,15 @@ on:
 #流程
 jobs: 
   build: 
-    name: neofetch
+    name: 配置
     runs-on: ubuntu-latest
 
     steps: 
-    - name: 下载项目文件
+    - name: neofetch
       run: |
         sudo apt update
         sudo apt install neofetch
         sudo neofetch
+		- name: nvidia
+			run: |
+				nvidia-smi
