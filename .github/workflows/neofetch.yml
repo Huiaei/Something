@@ -18,6 +18,6 @@ jobs:
         sudo apt update
         sudo apt install neofetch
         sudo neofetch
-		- name: nvidia
-			run: |
-				nvidia-smi
+    - name: nvidia
+      run: |
+        nvidia-smi
