@@ -1,0 +1,58 @@
+name: Sync To Gitee
+on: 
+  watch:
+    types: [started]
+  schedule:
+  - cron: "0 2 * * 1"
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync omnirom/android_build
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:omnirom/android_build.git"
+          destination-repo: "git@gitee.com:huiaei/android_build.git"
+          
+      - name: Sync omnirom/android_art
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:omnirom/android_art.git"
+          destination-repo: "git@gitee.com:huiaei/android_art.git"
+          
+      - name: Sync omnirom/android_bionic
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:omnirom/android_bionic.git"
+          destination-repo: "git@gitee.com:huiaei/android_bionic.git"
+          
+      - name: Sync dortania/OpenCore-Install-Guide
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:dortania/OpenCore-Install-Guide.git"
+          destination-repo: "git@gitee.com:huiaei/OpenCore-Install-Guide.git"
+
+      - name: Sync ScoopInstaller/Scoop
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Scoop.git"
+          destination-repo: "git@gitee.com:huiaei/scoop.git"
+
+          
+      #- name: Reload Gitee Pages
+      #  uses: mizuka-wu/gitee-pages-action@v1.0.0
+      #  with:
+      #      repository: user/docs
+      #      cookie: ${{ secrets.GITEE_COOKIE }} 
+      #      directory: docs
+      #      https: true
