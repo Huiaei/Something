@@ -8,10 +8,90 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Sync ScoopInstaller/Scoop
+      - name: Sync Scoop
         uses: wearerequired/git-mirror-action@master
         env:
           SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
         with:
           source-repo: "git@github.com:ScoopInstaller/Scoop.git"
           destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/scoop.git"
+
+      - name: Sync Main
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Main.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/main.git"
+
+      - name: Sync Extras
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Extras.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/extras.git"
+
+      - name: Sync Versions
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Versions.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/versions.git"
+
+      - name: Sync Nirsoft
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Nirsoft.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/nirsoft.git"
+      
+      - name: Sync Sysinternals
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Sysinternals.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/sysinternals.git"
+      
+      - name: Sync PHP
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/PHP.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/php.git"
+      
+      - name: Sync Nerd-fonts
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Nerd-fonts.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/nerd-fonts.git"
+
+      - name: Sync Nonportable
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Nonportable.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/nonportable.git"
+
+      - name: Sync Java
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Java.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/java.git"
+
+      - name: Sync Games
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Games.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/games.git"
