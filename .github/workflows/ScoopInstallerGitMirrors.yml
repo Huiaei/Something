@@ -79,3 +79,28 @@ jobs:
         with:
           source-repo: "git@github.com:ScoopInstaller/Tests.git"
           destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/Tests.git"
+
+      - name: Sync Games
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:Calinou/scoop-games.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/Games.git"
+
+      - name: Sync Sysinternals
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:niheaven/scoop-sysinternals.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/Sysinternals.git"
+
+      - name: Sync Nerd-fonts
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:git@github.com:matthewjberger/scoop-nerd-fonts.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/Nerd-fonts.git"
+
