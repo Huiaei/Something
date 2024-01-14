@@ -40,14 +40,6 @@ jobs:
           source-repo: "git@github.com:dortania/OpenCore-Install-Guide.git"
           destination-repo: "git@gitee.com:huiaei/OpenCore-Install-Guide.git"
 
-      - name: Sync ScoopInstaller/Scoop
-        uses: wearerequired/git-mirror-action@master
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
-        with:
-          source-repo: "git@github.com:ScoopInstaller/Scoop.git"
-          destination-repo: "git@gitee.com:huiaei/scoop.git"
-
           
       #- name: Reload Gitee Pages
       #  uses: mizuka-wu/gitee-pages-action@v1.0.0
