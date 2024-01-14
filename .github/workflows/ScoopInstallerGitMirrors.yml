@@ -1,0 +1,17 @@
+name: Sync To Gitee (ScoopInstaller)
+on: 
+  watch:
+    types: [started]
+  schedule:
+  - cron: "0 2 * * *"
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync ScoopInstaller/Scoop
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Scoop.git"
+          destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/scoop.git"
