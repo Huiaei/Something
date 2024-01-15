@@ -5,7 +5,7 @@ on:
   schedule:
   - cron: "0 2 * * *"
 jobs:
-  sync:
+  syn:
     runs-on: ubuntu-latest
     steps:
       - name: Sync Scoop
