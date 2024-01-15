@@ -1,11 +1,11 @@
-name: Sync To Gitee (ScoopInstaller)
+name: Sync To Gitee and Coding (ScoopInstaller)
 on: 
   watch:
     types: [started]
   schedule:
   - cron: "0 19 * * *"
 jobs:
-  syn:
+  SyncToGitee:
     runs-on: ubuntu-latest
     steps:
       - name: Sync Scoop
@@ -104,3 +104,101 @@ jobs:
           source-repo: "git@github.com:matthewjberger/scoop-nerd-fonts.git"
           destination-repo: "git@gitee.com:ScoopInstaller_Mirrors/Nerd-fonts.git"
 
+  SyncToCoding:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync Scoop
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Scoop.git"
+          destination-repo: "git@e.coding.net:huiaei/ScoopInstaller_Mirrors/Scoop.git"
+
+      - name: Sync Main
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Main.git"
+          destination-repo: "git@e.coding.net:huiaei/ScoopInstaller_Mirrors/Main.git"
+
+      - name: Sync Extras
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Extras.git"
+          destination-repo: "git@e.coding.net:huiaei/ScoopInstaller_Mirrors/Extras.git"
+
+      - name: Sync Versions
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Versions.git"
+          destination-repo: "git@e.coding.net:huiaei/ScoopInstaller_Mirrors/Versions.git"
+
+      - name: Sync Nirsoft
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Nirsoft.git"
+          destination-repo: "git@e.coding.net:huiaei/ScoopInstaller_Mirrors/Nirsoft.git"
+      
+      - name: Sync PHP
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/PHP.git"
+          destination-repo: "git@e.coding.net:huiaei/ScoopInstaller_Mirrors/PHP.git"
+      
+      - name: Sync Nonportable
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Nonportable.git"
+          destination-repo: "git@e.coding.net:huiaei/ScoopInstaller_Mirrors/Nonportable.git"
+
+      - name: Sync Java
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Java.git"
+          destination-repo: "git@e.coding.net:huiaei/ScoopInstaller_Mirrors/Java.git"
+
+      - name: Sync Tests
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:ScoopInstaller/Tests.git"
+          destination-repo: "git@e.coding.net:huiaei/ScoopInstaller_Mirrors/Tests.git"
+
+      - name: Sync Games
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:Calinou/scoop-games.git"
+          destination-repo: "git@e.coding.net:huiaei/ScoopInstaller_Mirrors/Games.git"
+
+      - name: Sync Sysinternals
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:niheaven/scoop-sysinternals.git"
+          destination-repo: "git@e.coding.net:huiaei/ScoopInstaller_Mirrors/Sysinternals.git"
+
+      - name: Sync Nerd-fonts
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:git@github.com:matthewjberger/scoop-nerd-fonts.git"
+          destination-repo: "git@e.coding.net:huiaei/ScoopInstaller_Mirrors/Nerd-fonts.git"
