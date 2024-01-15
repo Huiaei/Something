@@ -200,5 +200,5 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
         with:
-          source-repo: "git@github.com:git@github.com:matthewjberger/scoop-nerd-fonts.git"
+          source-repo: "git@github.com:matthewjberger/scoop-nerd-fonts.git"
           destination-repo: "git@e.coding.net:huiaei/ScoopInstaller_Mirrors/Nerd-fonts.git"
