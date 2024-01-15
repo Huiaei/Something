@@ -3,7 +3,7 @@ on:
   watch:
     types: [started]
   schedule:
-  - cron: "0 2 * * *"
+  - cron: "0 19 * * *"
 jobs:
   syn:
     runs-on: ubuntu-latest
