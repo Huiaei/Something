@@ -28,8 +28,7 @@ jobs:
         # -----------------------------------------------------
 
         # 1. 定义目标平台
-        #    auth: 'ssh' 表示使用密钥认证
-        #    auth: 'https' 表示使用账号密码认证
+        #    auth: 'ssh' 或 'https'
         platform:
           - name: Gitee
             auth: 'ssh'
@@ -43,12 +42,10 @@ jobs:
 
           - name: CNB
             auth: 'https'
-            # HTTPS 的 dest_base 不包含协议和认证信息
-            dest_base: 'cnb.cool/ScoopInstaller_Mirrors/' 
-            # 存放用户名的 secret 名称
+            # HTTPS 的 dest_base 不包含协议，将在步骤中动态添加
+            dest_base: 'cnb.cool/ScoopInstaller_Mirrors/'
             username_secret: 'CNB_USERNAME'
-            # 存放密码或访问令牌的 secret 名称
-            password_secret: 'CNB_ACCESS_TOKEN' # 建议使用 Access Token 而非原始密码
+            password_secret: 'CNB_ACCESS_TOKEN' # 强烈建议使用平台的 Access Token
         
         # 2. 定义需要同步的仓库
         repo:
@@ -67,23 +64,45 @@ jobs:
 
     # 作业步骤
     steps:
-      # 步骤 1: 处理所有使用 SSH 认证的平台
-      - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }} (via SSH)
-        # 仅当平台 auth 类型为 'ssh' 时运行此步骤
-        if: matrix.platform.auth == 'ssh'
-        uses: wearerequired/git-mirror-action@master
+      # 这是一个统一的同步步骤，它会为 matrix 中定义的每个组合运行一次
+      - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }}
+        # 为此步骤设置环境变量，以便在 run 脚本中使用
+        # 使用 if 条件，确保只设置当前认证模式所需的 secrets
         env:
-          SSH_PRIVATE_KEY: ${{ secrets[matrix.platform.secret_name] }}
-        with:
-          source-repo: "git@github.com:${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
-          destination-repo: "${{ matrix.platform.dest_base }}${{ matrix.repo.dest_name || matrix.repo.name }}.git"
-
-      # 步骤 2: 处理所有使用 HTTPS 认证的平台
-      - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }} (via HTTPS)
-        # 仅当平台 auth 类型为 'https' 时运行此步骤
-        if: matrix.platform.auth == 'https'
-        uses: wearerequired/git-mirror-action@master
-        with:
-          source-repo: "git@github.com:${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
-          # 动态构建包含认证信息的 HTTPS URL
-          destination-repo: "https://${{ secrets[matrix.platform.username_secret] }}:${{ secrets[matrix.platform.password_secret] }}@${{ matrix.platform.dest_base }}${{ matrix.repo.dest_name || matrix.repo.name }}.git"
+          # HTTPS 认证所需的环境变量
+          PLUGIN_USERNAME: ${{ (matrix.platform.auth == 'https') && secrets[matrix.platform.username_secret] || '' }}
+          PLUGIN_PASSWORD: ${{ (matrix.platform.auth == 'https') && secrets[matrix.platform.password_secret] || '' }}
+          # SSH 认证所需的环境变量
+          PLUGIN_SSH_KEY: ${{ (matrix.platform.auth == 'ssh') && secrets[matrix.platform.secret_name] || '' }}
+        
+        # 使用 run 执行多行脚本
+        run: |
+          # 1. 克隆源仓库。使用 --mirror 选项可以克隆所有分支和标签，是镜像操作的最佳选择。
+          #    对于公共仓库，使用 https 协议克隆更简单，无需配置 GitHub 的 key。
+          echo "Cloning source repository..."
+          git clone --mirror "https://github.com/${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
+          
+          # 2. 动态构建目标仓库 URL
+          if [ "${{ matrix.platform.auth }}" == "https" ]; then
+            TARGET_URL="https://${{ matrix.platform.dest_base }}${{ matrix.repo.dest_name || matrix.repo.name }}.git"
+          else
+            TARGET_URL="${{ matrix.platform.dest_base }}${{ matrix.repo.dest_name || matrix.repo.name }}.git"
+          fi
+          
+          echo "Syncing to target: $TARGET_URL"
+          
+          # 3. 运行 tencentcom/git-sync Docker 容器
+          #    -v "$(pwd)/${{ matrix.repo.name }}.git":/git 将本地克隆的仓库映射到容器内的 /git 目录
+          #    -w /git 设置容器的工作目录
+          #    -e PLUGIN_* 将参数传递给插件
+          docker run --rm \
+            -v "$(pwd)/${{ matrix.repo.name }}.git":/git \
+            -w /git \
+            -e PLUGIN_TARGET_URL="$TARGET_URL" \
+            -e PLUGIN_AUTH_TYPE="${{ matrix.platform.auth }}" \
+            -e PLUGIN_USERNAME="$PLUGIN_USERNAME" \
+            -e PLUGIN_PASSWORD="$PLUGIN_PASSWORD" \
+            -e PLUGIN_SSH_KEY="$PLUGIN_SSH_KEY" \
+            -e PLUGIN_FORCE="true" \
+            -e PLUGIN_PUSH_TAGS="true" \
+            tencentcom/git-sync
