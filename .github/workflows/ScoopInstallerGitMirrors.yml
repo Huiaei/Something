@@ -13,13 +13,13 @@ on:
 jobs:
   # 作业 0: 准备共享的矩阵配置
   prepare-matrix:
+    name: Prepare Shared Config
     runs-on: ubuntu-latest
     outputs:
       repos: ${{ steps.set-matrix.outputs.repos }}
     steps:
       - id: set-matrix
         run: |
-          # 将 YAML 格式的列表转换为紧凑的 JSON 字符串，并设置为输出
           echo "repos=$(cat <<'EOF' | jq -c .
           [
             { "name": "Scoop", "org": "ScoopInstaller" },
@@ -53,12 +53,15 @@ jobs:
           - name: Coding
             dest_base: 'git@e.coding.net:huiaei/ScoopInstaller_Mirrors/'
             secret_name: 'CODING_PRIVATE_KEY'
-        # 从准备作业的输出中动态加载仓库列表
         repo: ${{ fromJson(needs.prepare-matrix.outputs.repos) }}
     steps:
       - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }}
         uses: wearerequired/git-mirror-action@master
-        # ... (和方案1中的步骤相同)
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets[matrix.platform.secret_name] }}
+        with:
+          source-repo: "git@github.com:${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
+          destination-repo: "${{ matrix.platform.dest_base }}${{ matrix.repo.dest_name || matrix.repo.name }}.git"
 
   # 作业 2: 处理 HTTPS 平台
   sync-cnb:
@@ -68,8 +71,37 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 从准备作业的输出中动态加载仓库列表
         repo: ${{ fromJson(needs.prepare-matrix.outputs.repos) }}
     steps:
       - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to CNB
-        # ... (和方案1中的步骤相同)
+        env:
+          CNB_USER: ${{ secrets.CNB_USERNAME }}
+          CNB_TOKEN: ${{ secrets.CNB_ACCESS_TOKEN }}
+        run: |
+          set -e
+
+          if [ -z "$CNB_USER" ] || [ -z "$CNB_TOKEN" ]; then
+            echo "::error::CNB_USERNAME or CNB_ACCESS_TOKEN secret is not set."
+            exit 1
+          fi
+
+          SOURCE_REPO_NAME="${{ matrix.repo.name }}.git"
+          echo "--> Cloning source repo: https://github.com/${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
+          git clone --mirror "https://github.com/${{ matrix.repo.org }}/${{ matrix.repo.name }}.git" "$SOURCE_REPO_NAME"
+
+          DEST_REPO_NAME="${{ matrix.repo.dest_name || matrix.repo.name }}.git"
+          TARGET_URL="https://cnb.cool/ScoopInstaller_Mirrors/$DEST_REPO_NAME"
+          echo "--> Syncing to target: $TARGET_URL"
+
+          docker run --rm \
+            -v "$(pwd)/$SOURCE_REPO_NAME":/git \
+            -w /git \
+            -e PLUGIN_TARGET_URL="$TARGET_URL" \
+            -e PLUGIN_AUTH_TYPE="https" \
+            -e PLUGIN_USERNAME="$CNB_USER" \
+            -e PLUGIN_PASSWORD="$CNB_TOKEN" \
+            -e PLUGIN_FORCE="true" \
+            -e PLUGIN_PUSH_TAGS="true" \
+            tencentcom/git-sync
+
+          echo "--> Sync to CNB successful!"
