@@ -13,10 +13,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install apt dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y jq
+
+      - name: Install node dependencies
+        run: npm install js-yaml
 
       - name: Read config and sync all repos on all platforms
         uses: actions/github-script@v7
