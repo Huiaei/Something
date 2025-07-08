@@ -82,7 +82,7 @@ jobs:
       - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }} (via HTTPS)
         # 仅当平台 auth 类型为 'https' 时运行此步骤
         if: matrix.platform.auth == 'https'
-        uses: wearerequired/git-mirror-action@v5
+        uses: wearerequired/git-mirror-action@master
         with:
           source-repo: "git@github.com:${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
           # 动态构建包含认证信息的 HTTPS URL
