@@ -9,31 +9,6 @@ on:
   - cron: "0 19 * * *"
   workflow_dispatch:
 
-# -----------------------------------------------------
-# 配置区：所有仓库的列表
-# 我们将仓库列表定义在一个可重用的位置，以避免重复
-# -----------------------------------------------------
-workflow_call:
-  inputs:
-    repos:
-      type: string
-      required: false
-      default: >-
-        [
-          { "name": "Scoop", "org": "ScoopInstaller" },
-          { "name": "Main", "org": "ScoopInstaller" },
-          { "name": "Extras", "org": "ScoopInstaller" },
-          { "name": "Versions", "org": "ScoopInstaller" },
-          { "name": "Nirsoft", "org": "ScoopInstaller" },
-          { "name": "PHP", "org": "ScoopInstaller" },
-          { "name": "Nonportable", "org": "ScoopInstaller" },
-          { "name": "Java", "org": "ScoopInstaller" },
-          { "name": "Tests", "org": "ScoopInstaller" },
-          { "name": "scoop-games", "org": "Calinou", "dest_name": "Games" },
-          { "name": "scoop-sysinternals", "org": "niheaven", "dest_name": "Sysinternals" },
-          { "name": "scoop-nerd-fonts", "org": "matthewjberger", "dest_name": "Nerd-fonts" }
-        ]
-
 # 作业
 jobs:
   # 作业 1: 使用 wearerequired/git-mirror-action 处理所有 SSH 平台
@@ -51,8 +26,21 @@ jobs:
           - name: Coding
             dest_base: 'git@e.coding.net:huiaei/ScoopInstaller_Mirrors/'
             secret_name: 'CODING_PRIVATE_KEY'
-        # 从可重用配置中引入仓库列表
-        repo: ${{ fromJson(inputs.repos) }}
+        
+        # 使用 YAML 别名 (*repos) 来引用下面定义的仓库列表
+        repo: &repos
+          - { name: Scoop, org: ScoopInstaller }
+          - { name: Main, org: ScoopInstaller }
+          - { name: Extras, org: ScoopInstaller }
+          - { name: Versions, org: ScoopInstaller }
+          - { name: Nirsoft, org: ScoopInstaller }
+          - { name: PHP, org: ScoopInstaller }
+          - { name: Nonportable, org: ScoopInstaller }
+          - { name: Java, org: ScoopInstaller }
+          - { name: Tests, org: ScoopInstaller }
+          - { name: scoop-games, org: Calinou, dest_name: Games }
+          - { name: scoop-sysinternals, org: niheaven, dest_name: Sysinternals }
+          - { name: scoop-nerd-fonts, org: matthewjberger, dest_name: "Nerd-fonts" }
 
     steps:
       - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }}
@@ -62,25 +50,20 @@ jobs:
         with:
           source-repo: "git@github.com:${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
           destination-repo: "${{ matrix.platform.dest_base }}${{ matrix.repo.dest_name || matrix.repo.name }}.git"
-          # 确保所有内容都被推送
-          push-all: true
 
   # 作业 2: 使用 tencentcom/git-sync 单独处理 CNB (HTTPS)
   sync-cnb:
     name: Sync to HTTPS Platform (CNB)
     runs-on: ubuntu-latest
-    # 如果 SSH 作业失败，CNB 作业仍会运行
-    needs: []
     strategy:
       fail-fast: false
       matrix:
-        # 从可重用配置中引入仓库列表
-        repo: ${{ fromJson(inputs.repos) }}
+        # 再次使用 YAML 别名 (*repos) 来引用仓库列表
+        repo: *repos
 
     steps:
       - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to CNB
         env:
-          # 直接将所需的 secrets 传递给此步骤
           CNB_USER: ${{ secrets.CNB_USERNAME }}
           CNB_TOKEN: ${{ secrets.CNB_ACCESS_TOKEN }}
         run: |
