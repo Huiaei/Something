@@ -1,4 +1,5 @@
-# 20250708：使用DeepSeek R1 0528 优化配置结构；由于Coding平台即将下线，新增cnb平台。
+# 20250708：使用AI优化配置结构；由于Coding平台即将下线，新增cnb平台。
+
 
 name: Git-Sync (ScoopInstaller)
 on: 
@@ -12,54 +13,72 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: 
+        platform:
           - name: 'Gitee'
             key: ${{ secrets.GITEE_PRIVATE_KEY }}
             repo_domain: 'gitee.com'
             base_url: 'ScoopInstaller_Mirrors'
-            
           - name: 'Coding'
             key: ${{ secrets.CODING_PRIVATE_KEY }}
             repo_domain: 'e.coding.net/huiaei'
             base_url: 'ScoopInstaller_Mirrors'
-          
           - name: 'cnb'
             key: ${{ secrets.CNB_PRIVATE_KEY }}
             repo_domain: 'cnb.cool'
             base_url: 'ScoopInstaller_Mirrors'
 
-      # 主仓库列表
-      include:
-        - repo_set: 
-          - { src: "git@github.com:ScoopInstaller/Scoop.git" }
-          - { src: "git@github.com:ScoopInstaller/Main.git" }
-          - { src: "git@github.com:ScoopInstaller/Extras.git" }
-          - { src: "git@github.com:ScoopInstaller/Versions.git" }
-          - { src: "git@github.com:ScoopInstaller/Nirsoft.git" }
-          - { src: "git@github.com:ScoopInstaller/PHP.git" }
-          - { src: "git@github.com:ScoopInstaller/Nonportable.git" }
-          - { src: "git@github.com:ScoopInstaller/Java.git" }
-          - { src: "git@github.com:ScoopInstaller/Tests.git" }
-
-        # 第三方仓库特殊处理
-        - repo_set:
-          - src: "git@github.com:Calinou/scoop-games.git"
-            dest: "Games.git"
-          - src: "git@github.com:niheaven/scoop-sysinternals.git" 
-            dest: "Sysinternals.git"
-          - src: "git@github.com:matthewjberger/scoop-nerd-fonts.git"
-            dest: "Nerd-fonts.git"
-
     steps:
-      - name: Sync ${{ matrix.platform.name }} repositories
-        uses: wearerequired/git-mirror-action@master
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ matrix.platform.key }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ matrix.platform.repo_domain }} >> ~/.ssh/known_hosts
+
+      - name: Sync main repositories
         env:
-          SSH_PRIVATE_KEY: ${{ matrix.platform.key }}
-        with:
-          source-repo: ${{ format('{0}', repo.src) }}
-          destination-repo: |
-            git@${{ matrix.platform.repo_domain }}:${{ matrix.platform.base_url }}/${
-              { 
-                repo.dest || split(repo.src, '/')[1] | replace('.git', '')
-              }
-            }.git
+          REPO_DOMAIN: ${{ matrix.platform.repo_domain }}
+          BASE_URL: ${{ matrix.platform.base_url }}
+        run: |
+          repos=(
+            "ScoopInstaller/Scoop"
+            "ScoopInstaller/Main"
+            "ScoopInstaller/Extras"
+            "ScoopInstaller/Versions"
+            "ScoopInstaller/Nirsoft"
+            "ScoopInstaller/PHP"
+            "ScoopInstaller/Nonportable"
+            "ScoopInstaller/Java"
+            "ScoopInstaller/Tests"
+          )
+          for repo in "${repos[@]}"; do
+            src="git@github.com:${repo}.git"
+            dest_name=$(basename "$repo")
+            dest="git@${REPO_DOMAIN}:${BASE_URL}/${dest_name}.git"
+            echo "Syncing $src to $dest"
+            docker run --rm \
+              -e SSH_PRIVATE_KEY="$(cat ~/.ssh/id_rsa)" \
+              wearerequired/git-mirror "$src" "$dest"
+          done
+
+      - name: Sync third-party repositories
+        env:
+          REPO_DOMAIN: ${{ matrix.platform.repo_domain }}
+          BASE_URL: ${{ matrix.platform.base_url }}
+        run: |
+          declare -A repos=(
+            ["git@github.com:Calinou/scoop-games.git"]="Games.git"
+            ["git@github.com:niheaven/scoop-sysinternals.git"]="Sysinternals.git"
+            ["git@github.com:matthewjberger/scoop-nerd-fonts.git"]="Nerd-fonts.git"
+          )
+          for src in "${!repos[@]}"; do
+            dest="git@${REPO_DOMAIN}:${BASE_URL}/${repos[$src]}"
+            echo "Syncing $src to $dest"
+            docker run --rm \
+              -e SSH_PRIVATE_KEY="$(cat ~/.ssh/id_rsa)" \
+              wearerequired/git-mirror "$src" "$dest"
+          done
+            
