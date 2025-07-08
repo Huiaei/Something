@@ -1,6 +1,6 @@
 # 20250708：使用DeepSeek R1 0528 优化配置结构；由于Coding平台即将下线，新增cnb平台。
 
-name: Sync To Gitee and Coding (ScoopInstaller)
+name: Git-Sync (ScoopInstaller)
 on: 
   watch: 
     types: [started]
