@@ -65,7 +65,7 @@ jobs:
       # 这是一个通用的同步步骤，它会为 matrix 中定义的每个组合运行一次
       - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }}
         # 最佳实践: 建议使用具体的版本号（如 v5）而非 master，以保证稳定性
-        uses: wearerequired/git-mirror-action@v5 
+        uses: wearerequired/git-mirror-action@master
         env:
           # 已修正: 使用 matrix 中的 secret_name 作为 key，动态地从 secrets 上下文中查找私钥
           SSH_PRIVATE_KEY: ${{ secrets[matrix.platform.secret_name] }}
