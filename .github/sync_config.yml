@@ -1,0 +1,31 @@
+platforms:
+  gitee:
+    repo_domain: gitee.com
+    base_url: ScoopInstaller_Mirrors
+    secret: GITEE_PRIVATE_KEY
+  coding:
+    repo_domain: e.coding.net/huiaei
+    base_url: ScoopInstaller_Mirrors
+    secret: CODING_PRIVATE_KEY
+  cnb:
+    repo_domain: cnb.cool
+    base_url: ScoopInstaller_Mirrors
+    secret: CNB_PRIVATE_KEY
+
+repos:
+  - src: git@github.com:ScoopInstaller/Scoop.git
+  - src: git@github.com:ScoopInstaller/Main.git
+  - src: git@github.com:ScoopInstaller/Extras.git
+  - src: git@github.com:ScoopInstaller/Versions.git
+  - src: git@github.com:ScoopInstaller/Nirsoft.git
+  - src: git@github.com:ScoopInstaller/PHP.git
+  - src: git@github.com:ScoopInstaller/Nonportable.git
+  - src: git@github.com:ScoopInstaller/Java.git
+  - src: git@github.com:ScoopInstaller/Tests.git
+  # 第三方仓库支持自定义目标名
+  - src: git@github.com:Calinou/scoop-games.git
+    dest: Games.git
+  - src: git@github.com:niheaven/scoop-sysinternals.git
+    dest: Sysinternals.git
+  - src: git@github.com:matthewjberger/scoop-nerd-fonts.git
+    dest: Nerd-fonts.git
