@@ -71,7 +71,7 @@ jobs:
       - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }} (via SSH)
         # 仅当平台 auth 类型为 'ssh' 时运行此步骤
         if: matrix.platform.auth == 'ssh'
-        uses: wearerequired/git-mirror-action@v5
+        uses: wearerequired/git-mirror-action@master
         env:
           SSH_PRIVATE_KEY: ${{ secrets[matrix.platform.secret_name] }}
         with:
