@@ -1,68 +1,75 @@
-name: Git-Sync (ScoopInstaller)
+# 工作流名称
+name: Git Sync (ScoopInstaller)
+
+# 触发条件
 on: 
-  schedule: 
-    - cron: "0 19 * * *"
-  watch: 
+  # 当有人Star此仓库时触发（用于手动触发）
+  watch:
     types: [started]
+  # 定时任务：每天 UTC 19:00 (北京时间次日 03:00) 触发
+  schedule:
+  - cron: "0 19 * * *"
+  # 允许手动从 Actions 页面触发
+  workflow_dispatch:
 
+# 作业
 jobs:
-  sync-repos:
+  # 定义一个名为 sync-mirrors 的作业
+  sync-mirrors:
     runs-on: ubuntu-latest
+    
+    # 使用 strategy.matrix 来定义变化的配置
+    strategy:
+      # 设置 fail-fast 为 false，这样即使一个镜像同步失败，其他镜像也会继续
+      fail-fast: false
+      matrix:
+        # -----------------------------------------------------
+        # 配置区：未来只需在此处添加平台和仓库
+        # -----------------------------------------------------
 
+        # 1. 定义目标平台
+        # 每个平台需要: name (显示名称), dest_base (目标URL前缀), secret (用于认证的私钥)
+        platform:
+          - name: Gitee
+            dest_base: 'git@gitee.com:ScoopInstaller_Mirrors/'
+            secret: ${{ secrets.GITEE_PRIVATE_KEY }}
+          - name: Coding
+            dest_base: 'git@e.coding.net:huiaei/ScoopInstaller_Mirrors/'
+            secret: ${{ secrets.CODING_PRIVATE_KEY }}
+          - name: CNB
+            dest_base: 'https://cnb.cool/ScoopInstaller_Mirrors/'
+            secret: ${{ secrets.CNB_PRIVATE_KEY }}
+        
+        # 2. 定义需要同步的仓库
+        # 每个仓库需要: name (源仓库名), org (源仓库所属的组织/用户)
+        # 如果目标仓库名与源仓库名不同, 可以额外添加 dest_name 字段
+        repo:
+          - { name: Scoop, org: ScoopInstaller }
+          - { name: Main, org: ScoopInstaller }
+          - { name: Extras, org: ScoopInstaller }
+          - { name: Versions, org: ScoopInstaller }
+          - { name: Nirsoft, org: ScoopInstaller }
+          - { name: PHP, org: ScoopInstaller }
+          - { name: Nonportable, org: ScoopInstaller }
+          - { name: Java, org: ScoopInstaller }
+          - { name: Tests, org: ScoopInstaller }
+          - { name: scoop-games, org: Calinou, dest_name: Games }
+          - { name: scoop-sysinternals, org: niheaven, dest_name: Sysinternals }
+          - { name: scoop-nerd-fonts, org: matthewjberger, dest_name: 'Nerd-fonts' }
+
+    # 作业步骤
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install apt dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
-
-      - name: Install node dependencies
-        run: npm install js-yaml
-
-      - name: Read config and sync all repos on all platforms
-        uses: actions/github-script@v7
+      # 这是一个通用的同步步骤，它会为 matrix 中定义的每个组合运行一次
+      - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }}
+        # 推荐使用具体的版本号（如 v5）而非 master，以保证稳定性
+        uses: wearerequired/git-mirror-action@master
         env:
-          GITEE_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
-          CODING_PRIVATE_KEY: ${{ secrets.CODING_PRIVATE_KEY }}
-          CNB_PRIVATE_KEY: ${{ secrets.CNB_PRIVATE_KEY }}
+          # 从 platform 矩阵中动态获取私钥
+          SSH_PRIVATE_KEY: ${{ matrix.platform.secret }}
         with:
-          script: |
-            const fs = require('fs');
-            const yaml = require('js-yaml');
-            const { execSync } = require('child_process');
-
-            // 读取配置文件
-            const configContent = fs.readFileSync('.github/sync_config.yml', 'utf8');
-            const config = yaml.load(configContent);
-
-            for (const [platKey, plat] of Object.entries(config.platforms)) {
-              // 获取私钥
-              const secretKey = process.env[plat.secret];
-              if (!secretKey) {
-                console.log(`No secret for ${platKey}, skipping`);
-                continue;
-              }
-              console.log(`--- 平台: ${platKey} ---`);
-              fs.writeFileSync('/tmp/id_rsa', secretKey, {mode: 0o600});
-              execSync(`mkdir -p ~/.ssh && cp /tmp/id_rsa ~/.ssh/id_rsa`);
-              execSync(`ssh-keyscan -H ${plat.repo_domain} >> ~/.ssh/known_hosts`);
-
-              for (const repo of config.repos) {
-                const src = repo.src;
-                const repoName = repo.dest ? repo.dest.replace(/\.git$/, '') : src.split('/').pop().replace('.git','');
-                const dest = `git@${plat.repo_domain}:${plat.base_url}/${repoName}.git`;
-                console.log(`Syncing ${src} -> ${dest}`);
-                try {
-                  execSync(`rm -rf repo_mirror.git`);
-                  execSync(`git clone --mirror "${src}" repo_mirror.git`, {stdio: 'inherit'});
-                  execSync(`cd repo_mirror.git && git remote set-url --push origin "${dest}"`, {stdio: 'inherit'});
-                  execSync(`cd repo_mirror.git && git push --mirror`, {stdio: 'inherit'});
-                  execSync(`rm -rf repo_mirror.git`);
-                } catch (e) {
-                  console.log(`Failed syncing ${src} -> ${dest}`);
-                }
-              }
-              execSync(`rm -f ~/.ssh/id_rsa`);
-            }
+          # 动态构建源仓库 URL
+          source-repo: "git@github.com:${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
+          
+          # 动态构建目标仓库 URL
+          # 如果定义了 dest_name，则使用它；否则，使用源仓库的 name
+          destination-repo: "${{ matrix.platform.dest_base }}${{ matrix.repo.dest_name || matrix.repo.name }}.git"
