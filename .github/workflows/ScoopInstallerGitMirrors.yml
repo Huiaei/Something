@@ -28,24 +28,29 @@ jobs:
         # -----------------------------------------------------
 
         # 1. 定义目标平台
-        # 每个平台需要: name (显示名称), dest_base (目标URL前缀), secret_name (用于认证的私钥的名称)
+        #    auth: 'ssh' 表示使用密钥认证
+        #    auth: 'https' 表示使用账号密码认证
         platform:
-          # 已修正: 将 'secret' 改为 'secret_name'，并使用纯字符串作为值
           - name: Gitee
+            auth: 'ssh'
             dest_base: 'git@gitee.com:ScoopInstaller_Mirrors/'
             secret_name: 'GITEE_PRIVATE_KEY'
+
           - name: Coding
+            auth: 'ssh'
             dest_base: 'git@e.coding.net:huiaei/ScoopInstaller_Mirrors/'
             secret_name: 'CODING_PRIVATE_KEY'
+
           - name: CNB
-            # 注意: 如果 CNB 平台使用 SSH 推送，URL 格式可能需要是 git@...
-            # 如果是 HTTPS 推送，git-mirror-action 可能需要不同的认证方式 (如 token)
-            dest_base: 'https://cnb.cool/ScoopInstaller_Mirrors/' 
-            secret_name: 'CNB_PRIVATE_KEY'
+            auth: 'https'
+            # HTTPS 的 dest_base 不包含协议和认证信息
+            dest_base: 'cnb.cool/ScoopInstaller_Mirrors/' 
+            # 存放用户名的 secret 名称
+            username_secret: 'CNB_USERNAME'
+            # 存放密码或访问令牌的 secret 名称
+            password_secret: 'CNB_ACCESS_TOKEN' # 建议使用 Access Token 而非原始密码
         
         # 2. 定义需要同步的仓库
-        # 每个仓库需要: name (源仓库名), org (源仓库所属的组织/用户)
-        # 如果目标仓库名与源仓库名不同, 可以额外添加 dest_name 字段
         repo:
           - { name: Scoop, org: ScoopInstaller }
           - { name: Main, org: ScoopInstaller }
@@ -62,17 +67,23 @@ jobs:
 
     # 作业步骤
     steps:
-      # 这是一个通用的同步步骤，它会为 matrix 中定义的每个组合运行一次
-      - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }}
-        # 最佳实践: 建议使用具体的版本号（如 v5）而非 master，以保证稳定性
-        uses: wearerequired/git-mirror-action@master
+      # 步骤 1: 处理所有使用 SSH 认证的平台
+      - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }} (via SSH)
+        # 仅当平台 auth 类型为 'ssh' 时运行此步骤
+        if: matrix.platform.auth == 'ssh'
+        uses: wearerequired/git-mirror-action@v5
         env:
-          # 已修正: 使用 matrix 中的 secret_name 作为 key，动态地从 secrets 上下文中查找私钥
           SSH_PRIVATE_KEY: ${{ secrets[matrix.platform.secret_name] }}
         with:
-          # 动态构建源仓库 URL
           source-repo: "git@github.com:${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
-          
-          # 动态构建目标仓库 URL
-          # 如果定义了 dest_name，则使用它；否则，使用源仓库的 name
           destination-repo: "${{ matrix.platform.dest_base }}${{ matrix.repo.dest_name || matrix.repo.name }}.git"
+
+      # 步骤 2: 处理所有使用 HTTPS 认证的平台
+      - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }} (via HTTPS)
+        # 仅当平台 auth 类型为 'https' 时运行此步骤
+        if: matrix.platform.auth == 'https'
+        uses: wearerequired/git-mirror-action@v5
+        with:
+          source-repo: "git@github.com:${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
+          # 动态构建包含认证信息的 HTTPS URL
+          destination-repo: "https://${{ secrets[matrix.platform.username_secret] }}:${{ secrets[matrix.platform.password_secret] }}@${{ matrix.platform.dest_base }}${{ matrix.repo.dest_name || matrix.repo.name }}.git"
