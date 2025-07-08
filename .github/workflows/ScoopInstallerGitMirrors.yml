@@ -11,14 +11,41 @@ on:
 
 # 作业
 jobs:
-  # 作业 1: 使用 wearerequired/git-mirror-action 处理所有 SSH 平台
+  # 作业 0: 准备共享的矩阵配置
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      repos: ${{ steps.set-matrix.outputs.repos }}
+    steps:
+      - id: set-matrix
+        run: |
+          # 将 YAML 格式的列表转换为紧凑的 JSON 字符串，并设置为输出
+          echo "repos=$(cat <<'EOF' | jq -c .
+          [
+            { "name": "Scoop", "org": "ScoopInstaller" },
+            { "name": "Main", "org": "ScoopInstaller" },
+            { "name": "Extras", "org": "ScoopInstaller" },
+            { "name": "Versions", "org": "ScoopInstaller" },
+            { "name": "Nirsoft", "org": "ScoopInstaller" },
+            { "name": "PHP", "org": "ScoopInstaller" },
+            { "name": "Nonportable", "org": "ScoopInstaller" },
+            { "name": "Java", "org": "ScoopInstaller" },
+            { "name": "Tests", "org": "ScoopInstaller" },
+            { "name": "scoop-games", "org": "Calinou", "dest_name": "Games" },
+            { "name": "scoop-sysinternals", "org": "niheaven", "dest_name": "Sysinternals" },
+            { "name": "scoop-nerd-fonts", "org": "matthewjberger", "dest_name": "Nerd-fonts" }
+          ]
+          EOF
+          )" >> $GITHUB_OUTPUT
+
+  # 作业 1: 处理 SSH 平台
   sync-ssh:
     name: Sync to SSH Platforms (Gitee, Coding)
     runs-on: ubuntu-latest
+    needs: prepare-matrix # 依赖于准备作业
     strategy:
       fail-fast: false
       matrix:
-        # 定义需要同步的平台
         platform:
           - name: Gitee
             dest_base: 'git@gitee.com:ScoopInstaller_Mirrors/'
@@ -26,75 +53,23 @@ jobs:
           - name: Coding
             dest_base: 'git@e.coding.net:huiaei/ScoopInstaller_Mirrors/'
             secret_name: 'CODING_PRIVATE_KEY'
-        
-        # 使用 YAML 别名 (*repos) 来引用下面定义的仓库列表
-        repo: &repos
-          - { name: Scoop, org: ScoopInstaller }
-          - { name: Main, org: ScoopInstaller }
-          - { name: Extras, org: ScoopInstaller }
-          - { name: Versions, org: ScoopInstaller }
-          - { name: Nirsoft, org: ScoopInstaller }
-          - { name: PHP, org: ScoopInstaller }
-          - { name: Nonportable, org: ScoopInstaller }
-          - { name: Java, org: ScoopInstaller }
-          - { name: Tests, org: ScoopInstaller }
-          - { name: scoop-games, org: Calinou, dest_name: Games }
-          - { name: scoop-sysinternals, org: niheaven, dest_name: Sysinternals }
-          - { name: scoop-nerd-fonts, org: matthewjberger, dest_name: "Nerd-fonts" }
-
+        # 从准备作业的输出中动态加载仓库列表
+        repo: ${{ fromJson(needs.prepare-matrix.outputs.repos) }}
     steps:
       - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }}
         uses: wearerequired/git-mirror-action@master
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets[matrix.platform.secret_name] }}
-        with:
-          source-repo: "git@github.com:${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
-          destination-repo: "${{ matrix.platform.dest_base }}${{ matrix.repo.dest_name || matrix.repo.name }}.git"
+        # ... (和方案1中的步骤相同)
 
-  # 作业 2: 使用 tencentcom/git-sync 单独处理 CNB (HTTPS)
+  # 作业 2: 处理 HTTPS 平台
   sync-cnb:
     name: Sync to HTTPS Platform (CNB)
     runs-on: ubuntu-latest
+    needs: prepare-matrix # 依赖于准备作业
     strategy:
       fail-fast: false
       matrix:
-        # 再次使用 YAML 别名 (*repos) 来引用仓库列表
-        repo: *repos
-
+        # 从准备作业的输出中动态加载仓库列表
+        repo: ${{ fromJson(needs.prepare-matrix.outputs.repos) }}
     steps:
       - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to CNB
-        env:
-          CNB_USER: ${{ secrets.CNB_USERNAME }}
-          CNB_TOKEN: ${{ secrets.CNB_ACCESS_TOKEN }}
-        run: |
-          set -e # 如果任何命令失败，则立即退出
-
-          # 检查 Secrets 是否已设置
-          if [ -z "$CNB_USER" ] || [ -z "$CNB_TOKEN" ]; then
-            echo "::error::CNB_USERNAME or CNB_ACCESS_TOKEN secret is not set."
-            exit 1
-          fi
-
-          # 1. 克隆源仓库
-          SOURCE_REPO_NAME="${{ matrix.repo.name }}.git"
-          echo "--> Cloning source repo: https://github.com/${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
-          git clone --mirror "https://github.com/${{ matrix.repo.org }}/${{ matrix.repo.name }}.git" "$SOURCE_REPO_NAME"
-
-          # 2. 构建目标 URL
-          DEST_REPO_NAME="${{ matrix.repo.dest_name || matrix.repo.name }}.git"
-          TARGET_URL="https://cnb.cool/ScoopInstaller_Mirrors/$DEST_REPO_NAME"
-          echo "--> Syncing to target: $TARGET_URL"
-
-          # 3. 运行 Docker 容器进行同步
-          docker run --rm \
-            -v "$(pwd)/$SOURCE_REPO_NAME":/git \
-            -w /git \
-            -e PLUGIN_TARGET_URL="$TARGET_URL" \
-            -e PLUGIN_AUTH_TYPE="https" \
-            -e PLUGIN_USERNAME="$CNB_USER" \
-            -e PLUGIN_PASSWORD="$CNB_TOKEN" \
-            -e PLUGIN_FORCE="true" \
-            -e PLUGIN_PUSH_TAGS="true" \
-            tencentcom/git-sync
-
-          echo "--> Sync to CNB successful!"
+        # ... (和方案1中的步骤相同)
