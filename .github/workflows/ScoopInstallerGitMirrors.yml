@@ -1,5 +1,10 @@
 name: Git Sync (All Mirrors)
 
+# 新增权限：允许删除 Actions 记录
+permissions:
+  actions: write
+  contents: read
+
 on: 
   watch:
     types: [started]
@@ -16,9 +21,7 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          echo "repos=$(cat <<'EOF' | jq -c .
-          [
-            # ========== ScoopInstaller 原有仓库 ==========
+          echo 'repos=[
             { "name": "Scoop", "org": "ScoopInstaller" },
             { "name": "Main", "org": "ScoopInstaller" },
             { "name": "Extras", "org": "ScoopInstaller" },
@@ -31,17 +34,12 @@ jobs:
             { "name": "scoop-games", "org": "Calinou", "dest_name": "Games" },
             { "name": "scoop-sysinternals", "org": "niheaven", "dest_name": "Sysinternals" },
             { "name": "scoop-nerd-fonts", "org": "matthewjberger", "dest_name": "Nerd-fonts" },
-
-            # ========== 新增：omnirom / dortania 仓库 ==========
             { "name": "android_build", "org": "omnirom", "dest_org": "huiaei" },
             { "name": "android_art", "org": "omnirom", "dest_org": "huiaei" },
             { "name": "android_bionic", "org": "omnirom", "dest_org": "huiaei" },
             { "name": "OpenCore-Install-Guide", "org": "dortania", "dest_org": "huiaei" }
-          ]
-          EOF
-          )" >> $GITHUB_OUTPUT
+          ]' >> $GITHUB_OUTPUT
 
-  # 同步到 Gitee
   sync-ssh:
     name: Sync to Gitee
     runs-on: ubuntu-latest
@@ -59,7 +57,6 @@ jobs:
           source-repo: "git@github.com:${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
           destination-repo: "git@gitee.com:${{ matrix.repo.dest_org || 'ScoopInstaller_Mirrors' }}/${{ matrix.repo.dest_name || matrix.repo.name }}.git"
 
-  # 同步到 CNB（仅同步 Scoop 仓库）
   sync-cnb:
     name: Sync to CNB
     runs-on: ubuntu-latest
@@ -70,7 +67,7 @@ jobs:
         repo: ${{ fromJson(needs.prepare-matrix.outputs.repos) }}
     steps:
       - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to CNB
-        if: ${{ matrix.repo.dest_org == null }} # 只同步 Scoop 系列
+        if: ${{ matrix.repo.dest_org == null }}
         env:
           CNB_USER: ${{ secrets.CNB_USERNAME }}
           CNB_TOKEN: ${{ secrets.CNB_ACCESS_TOKEN }}
@@ -89,3 +86,16 @@ jobs:
             -e PLUGIN_FORCE="true" \
             -e PLUGIN_PUSH_TAGS="true" \
             tencentcom/git-sync
+
+  # 新增：自动清理 7 天前的执行记录
+  cleanup-runs:
+    name: Cleanup Old Actions Runs
+    runs-on: ubuntu-latest
+    needs: [sync-ssh, sync-cnb]
+    if: always()
+    steps:
+      - name: Delete runs older than 7 days
+        uses: Matt-Gleich/delete-old-workflow-runs@v2
+        with:
+          days-old: 7
+          workflow-name: Git Sync (All Mirrors)
