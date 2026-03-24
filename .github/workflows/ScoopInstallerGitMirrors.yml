@@ -1,7 +1,5 @@
-# 工作流名称
-name: Git Sync (ScoopInstaller)
+name: Git Sync (All Mirrors)
 
-# 触发条件
 on: 
   watch:
     types: [started]
@@ -9,9 +7,7 @@ on:
   - cron: "0 19 * * *"
   workflow_dispatch:
 
-# 作业
 jobs:
-  # 作业 0: 准备共享的矩阵配置
   prepare-matrix:
     name: Prepare Shared Config
     runs-on: ubuntu-latest
@@ -22,6 +18,7 @@ jobs:
         run: |
           echo "repos=$(cat <<'EOF' | jq -c .
           [
+            # ========== ScoopInstaller 原有仓库 ==========
             { "name": "Scoop", "org": "ScoopInstaller" },
             { "name": "Main", "org": "ScoopInstaller" },
             { "name": "Extras", "org": "ScoopInstaller" },
@@ -33,72 +30,62 @@ jobs:
             { "name": "Tests", "org": "ScoopInstaller" },
             { "name": "scoop-games", "org": "Calinou", "dest_name": "Games" },
             { "name": "scoop-sysinternals", "org": "niheaven", "dest_name": "Sysinternals" },
-            { "name": "scoop-nerd-fonts", "org": "matthewjberger", "dest_name": "Nerd-fonts" }
+            { "name": "scoop-nerd-fonts", "org": "matthewjberger", "dest_name": "Nerd-fonts" },
+
+            # ========== 新增：omnirom / dortania 仓库 ==========
+            { "name": "android_build", "org": "omnirom", "dest_org": "huiaei" },
+            { "name": "android_art", "org": "omnirom", "dest_org": "huiaei" },
+            { "name": "android_bionic", "org": "omnirom", "dest_org": "huiaei" },
+            { "name": "OpenCore-Install-Guide", "org": "dortania", "dest_org": "huiaei" }
           ]
           EOF
           )" >> $GITHUB_OUTPUT
 
-  # 作业 1: 处理 SSH 平台（仅保留 Gitee）
+  # 同步到 Gitee
   sync-ssh:
-    name: Sync to SSH Platforms (Gitee)
+    name: Sync to Gitee
     runs-on: ubuntu-latest
-    needs: prepare-matrix # 依赖于准备作业
+    needs: prepare-matrix
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - name: Gitee
-            dest_base: 'git@gitee.com:ScoopInstaller_Mirrors/'
-            secret_name: 'GITEE_PRIVATE_KEY'
         repo: ${{ fromJson(needs.prepare-matrix.outputs.repos) }}
     steps:
-      - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }}
+      - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to Gitee
         uses: wearerequired/git-mirror-action@master
         env:
-          SSH_PRIVATE_KEY: ${{ secrets[matrix.platform.secret_name] }}
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
         with:
           source-repo: "git@github.com:${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
-          destination-repo: "${{ matrix.platform.dest_base }}${{ matrix.repo.dest_name || matrix.repo.name }}.git"
+          destination-repo: "git@gitee.com:${{ matrix.repo.dest_org || 'ScoopInstaller_Mirrors' }}/${{ matrix.repo.dest_name || matrix.repo.name }}.git"
 
-  # 作业 2: 处理 HTTPS 平台 (CNB)
+  # 同步到 CNB（仅同步 Scoop 仓库）
   sync-cnb:
-    name: Sync to HTTPS Platform (CNB)
+    name: Sync to CNB
     runs-on: ubuntu-latest
-    needs: prepare-matrix # 依赖于准备作业
+    needs: prepare-matrix
     strategy:
       fail-fast: false
       matrix:
         repo: ${{ fromJson(needs.prepare-matrix.outputs.repos) }}
     steps:
       - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to CNB
+        if: ${{ matrix.repo.dest_org == null }} # 只同步 Scoop 系列
         env:
           CNB_USER: ${{ secrets.CNB_USERNAME }}
           CNB_TOKEN: ${{ secrets.CNB_ACCESS_TOKEN }}
         run: |
           set -e
-
           if [ -z "$CNB_USER" ] || [ -z "$CNB_TOKEN" ]; then
-            echo "::error::CNB_USERNAME or CNB_ACCESS_TOKEN secret is not set."
+            echo "::error::CNB config missing"
             exit 1
           fi
-
-          SOURCE_REPO_NAME="${{ matrix.repo.name }}.git"
-          echo "--> Cloning source repo: https://github.com/${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
-          git clone --mirror "https://github.com/${{ matrix.repo.org }}/${{ matrix.repo.name }}.git" "$SOURCE_REPO_NAME"
-
-          DEST_REPO_NAME="${{ matrix.repo.dest_name || matrix.repo.name }}.git"
-          TARGET_URL="https://cnb.cool/ScoopInstaller_Mirrors/$DEST_REPO_NAME"
-          echo "--> Syncing to target: $TARGET_URL"
-
-          docker run --rm \
-            -v "$(pwd)/$SOURCE_REPO_NAME":/git \
-            -w /git \
-            -e PLUGIN_TARGET_URL="$TARGET_URL" \
+          git clone --mirror "https://github.com/${{ matrix.repo.org }}/${{ matrix.repo.name }}.git" repo.git
+          docker run --rm -v "$(pwd)/repo.git":/git -w /git \
+            -e PLUGIN_TARGET_URL="https://cnb.cool/ScoopInstaller_Mirrors/${{ matrix.repo.dest_name || matrix.repo.name }}.git" \
             -e PLUGIN_AUTH_TYPE="https" \
             -e PLUGIN_USERNAME="$CNB_USER" \
             -e PLUGIN_PASSWORD="$CNB_TOKEN" \
             -e PLUGIN_FORCE="true" \
             -e PLUGIN_PUSH_TAGS="true" \
             tencentcom/git-sync
-
-          echo "--> Sync to CNB successful!"
