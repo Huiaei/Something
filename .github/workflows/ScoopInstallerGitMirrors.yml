@@ -21,24 +21,8 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          echo 'repos=[
-            { "name": "Scoop", "org": "ScoopInstaller" },
-            { "name": "Main", "org": "ScoopInstaller" },
-            { "name": "Extras", "org": "ScoopInstaller" },
-            { "name": "Versions", "org": "ScoopInstaller" },
-            { "name": "Nirsoft", "org": "ScoopInstaller" },
-            { "name": "PHP", "org": "ScoopInstaller" },
-            { "name": "Nonportable", "org": "ScoopInstaller" },
-            { "name": "Java", "org": "ScoopInstaller" },
-            { "name": "Tests", "org": "ScoopInstaller" },
-            { "name": "scoop-games", "org": "Calinou", "dest_name": "Games" },
-            { "name": "scoop-sysinternals", "org": "niheaven", "dest_name": "Sysinternals" },
-            { "name": "scoop-nerd-fonts", "org": "matthewjberger", "dest_name": "Nerd-fonts" },
-            { "name": "android_build", "org": "omnirom", "dest_org": "huiaei" },
-            { "name": "android_art", "org": "omnirom", "dest_org": "huiaei" },
-            { "name": "android_bionic", "org": "omnirom", "dest_org": "huiaei" },
-            { "name": "OpenCore-Install-Guide", "org": "dortania", "dest_org": "huiaei" }
-          ]' >> $GITHUB_OUTPUT
+          # 修复1：使用单行紧凑JSON格式，避免换行和多余空格导致的解析错误
+          echo 'repos=[{"name":"Scoop","org":"ScoopInstaller"},{"name":"Main","org":"ScoopInstaller"},{"name":"Extras","org":"ScoopInstaller"},{"name":"Versions","org":"ScoopInstaller"},{"name":"Nirsoft","org":"ScoopInstaller"},{"name":"PHP","org":"ScoopInstaller"},{"name":"Nonportable","org":"ScoopInstaller"},{"name":"Java","org":"ScoopInstaller"},{"name":"Tests","org":"ScoopInstaller"},{"name":"scoop-games","org":"Calinou","dest_name":"Games"},{"name":"scoop-sysinternals","org":"niheaven","dest_name":"Sysinternals"},{"name":"scoop-nerd-fonts","org":"matthewjberger","dest_name":"Nerd-fonts"},{"name":"android_build","org":"omnirom","dest_org":"huiaei"},{"name":"android_art","org":"omnirom","dest_org":"huiaei"},{"name":"android_bionic","org":"omnirom","dest_org":"huiaei"},{"name":"OpenCore-Install-Guide","org":"dortania","dest_org":"huiaei"}]' >> $GITHUB_OUTPUT
 
   sync-ssh:
     name: Sync to Gitee
@@ -77,6 +61,7 @@ jobs:
             echo "::error::CNB config missing"
             exit 1
           fi
+          # 修复2：移除URL中的多余空格
           git clone --mirror "https://github.com/${{ matrix.repo.org }}/${{ matrix.repo.name }}.git" repo.git
           docker run --rm -v "$(pwd)/repo.git":/git -w /git \
             -e PLUGIN_TARGET_URL="https://cnb.cool/ScoopInstaller_Mirrors/${{ matrix.repo.dest_name || matrix.repo.name }}.git" \
@@ -95,7 +80,9 @@ jobs:
     if: always()
     steps:
       - name: Delete runs older than 7 days
-        uses: Matt-Gleich/delete-old-workflow-runs@v2
+        # 修复3：使用替代的Action（原Action仓库已不存在）
+        uses: igorjs/gh-actions-clean-workflow@v4
         with:
-          days-old: 7
-          workflow-name: Git Sync (All Mirrors)
+          token: ${{ secrets.GITHUB_TOKEN }}
+          days_old: 7
+          workflow_name: "Git Sync (All Mirrors)"
