@@ -38,9 +38,9 @@ jobs:
           EOF
           )" >> $GITHUB_OUTPUT
 
-  # 作业 1: 处理 SSH 平台
+  # 作业 1: 处理 SSH 平台（仅保留 Gitee）
   sync-ssh:
-    name: Sync to SSH Platforms (Gitee, Coding)
+    name: Sync to SSH Platforms (Gitee)
     runs-on: ubuntu-latest
     needs: prepare-matrix # 依赖于准备作业
     strategy:
@@ -50,9 +50,6 @@ jobs:
           - name: Gitee
             dest_base: 'git@gitee.com:ScoopInstaller_Mirrors/'
             secret_name: 'GITEE_PRIVATE_KEY'
-          - name: Coding
-            dest_base: 'git@e.coding.net:huiaei/ScoopInstaller_Mirrors/'
-            secret_name: 'CODING_PRIVATE_KEY'
         repo: ${{ fromJson(needs.prepare-matrix.outputs.repos) }}
     steps:
       - name: Sync ${{ matrix.repo.org }}/${{ matrix.repo.name }} to ${{ matrix.platform.name }}
@@ -63,7 +60,7 @@ jobs:
           source-repo: "git@github.com:${{ matrix.repo.org }}/${{ matrix.repo.name }}.git"
           destination-repo: "${{ matrix.platform.dest_base }}${{ matrix.repo.dest_name || matrix.repo.name }}.git"
 
-  # 作业 2: 处理 HTTPS 平台
+  # 作业 2: 处理 HTTPS 平台 (CNB)
   sync-cnb:
     name: Sync to HTTPS Platform (CNB)
     runs-on: ubuntu-latest
